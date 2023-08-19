@@ -1,84 +1,87 @@
 import os
+import random
+from enum import Enum
+from typing import List
+
+import logging
+
+from torchvision.transforms import Compose
 from torchvision.io import read_image
 from torch.utils.data import Dataset
 import cv2
-import random
 
+from azureml.fsspec import AzureMachineLearningFileSystem
+
+from config import ml_client
+
+class DatasetType(Enum):
+    TRAIN = 0
+    TEST = 1
 
 class ImageClassificationDataset(Dataset):
-    def __init__(self, img_source, transform=None, target_transform=None, labels=None):
+
+    CACHE_PATH="/tmp"
+
+    def __init__(self, dataset_name:str, version:int, dataset_type:DatasetType = DatasetType.TRAIN, transform:Compose=None, target_transform:Compose=None, labels:List[str]=None):
+        logging.info("ImageClassificationDataset -> Connecting to dataset filesystem")
+        filedataset_asset = ml_client.data.get(name=dataset_name, version=str(version))
+        self.azure_fs = AzureMachineLearningFileSystem(filedataset_asset.path)
+
+        folders = self.azure_fs.ls()
+        self.azure_data_root = f"{os.sep}".join(folders[0].split(os.sep)[:-2])
+
         self.transform = transform
         self.target_transform = target_transform
-        if type(img_source) == str:
-            self._load_imagens_from_dir(img_source)
+        logging.info("ImageClassificationDataset -> Connecting to dataset filesystem ... done")
+        logging.info(f"ImageClassificationDataset -> loading dataset {dataset_name}:{version} metadata")
+        self._load_dataset_from_azureml(dataset_type)
+        if labels is None:
+            self.labels = list(set([label for _, label in self.image_list]))
         else:
-            if labels is None:
-                raise (Exception("labels needed to construct Dataset"))
-            self._load_from_image_list(img_source, labels)
+            self.labels = labels
+        logging.info(f"ImageClassificationDataset -> loading dataset {dataset_name}:{version} metadata ... done")
 
-    def _load_imagens_from_dir(self, img_dir):
+    def _load_dataset_from_azureml(self, dataset_type:DatasetType = DatasetType.TRAIN):
+        if dataset_type == DatasetType.TRAIN:
+            path = os.path.join(self.azure_data_root, "train")
+        elif dataset_type == DatasetType.TEST:
+            path = os.path.join(self.azure_data_root, "test")
 
-        self.img_list = []
-        self.labels = []
+        self.image_list = []
 
-        for file in os.listdir(img_dir):
-            path = os.path.join(img_dir, file)
-            if os.path.isdir(path):
-                self.labels.append(file)
+        for file in self.azure_fs.glob(f"{path}/*/*.jpg"):
+            label = file.split(os.sep)[-2]
+            self.image_list.append((file,label))
 
-        for label in self.labels:
-            label_path = os.path.join(img_dir, label)
-            for file in os.listdir(label_path):
-                path = os.path.join(label_path, file)
-                ext = os.path.splitext(file)[1]
-                if ext == ".png" or ext == ".jpeg" or ext == ".jpg":
-                    self.img_list.append([path, label])
-
-    def _load_from_image_list(self, img_list, labels):
-        self.img_list = img_list
-        self.labels = labels
+        
 
     def __len__(self):
-        return len(self.img_list)
-
+        return len(self.image_list)
+    
     def __getitem__(self, index):
-        img_path, label_str = self.img_list[index]
-        image = cv2.imread(img_path)
+        img_path, label_str = self.image_list[index]
+        local_img_path = os.path.join(ImageClassificationDataset.CACHE_PATH, img_path)
+        if not os.path.exists(local_img_path):
+            self.azure_fs.get_file(img_path, ImageClassificationDataset.CACHE_PATH)
+
+        image = cv2.imread(local_img_path)
         label = self.labels.index(label_str)
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
         return image, label
-
-    def split(self, proportion=0.8, seed=4444):
-        random.seed(seed)
-        train = []
-        test = []
-
-        for img in self.img_list:
-            if random.randint(0, 100) / 100 < proportion:
-                train.append(img.copy())
-            else:
-                test.append(img.copy())
-
-        trainDataset = ImageClassificationDataset(
-            train, self.transform, self.target_transform, self.labels
-        )
-        testDataset = ImageClassificationDataset(
-            test, self.transform, self.target_transform, self.labels
-        )
-        return trainDataset, testDataset
+            
 
 
 if __name__ == "__main__":
-    dataset = ImageClassificationDataset("./datasets/Rice_Image_Dataset")
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
 
-    train, test = dataset.split()
-    img, label = test[-1]
+    dataset = ImageClassificationDataset("rice_dataset", 6)
 
-    print(len(train))
-    print(len(test))
+    img, label = dataset[-1]
+
     print(len(dataset))
     print(img.shape)
     print(label)

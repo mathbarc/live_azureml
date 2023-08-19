@@ -1,8 +1,9 @@
-from config import ml_client
+from training_job.config import ml_client
 from azureml.fsspec import AzureMachineLearningFileSystem
 import os
+import cv2
 
-filedataset_asset = ml_client.data.get(name="rice_dataset", version="3")
+filedataset_asset = ml_client.data.get(name="rice_dataset", version="6")
 
 fs = AzureMachineLearningFileSystem(filedataset_asset.path)
 
@@ -17,9 +18,16 @@ test_files = []
 for file in fs.glob(f"{root}/train/*/*.jpg"):
     train_files.append(file)
 
-for file in fs.glob(f"{root}/test/*/*.jpg"):
-    test_files.append(file)
 
+img_path = os.path.join("/tmp",train_files[0])
+
+if not os.path.exists(img_path):
+    fs.get_file(train_files[0],"/tmp")
+
+img = cv2.imread(img_path)
+
+cv2.imshow("tmp", img)
+cv2.waitKey()
 
 
 ...

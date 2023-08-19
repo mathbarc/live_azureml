@@ -10,8 +10,11 @@ torchvision = {version="0.15.2"}
 python-dotenv = {version="1.0.0"}
 tqdm = {version="4.65.0"}
 opencv-python = {version="4.7.0.68"}
-azure = {version = "4.0.0"}
+azure-cli = {version = "2.51.0"}
+azure-ai-ml = {version = "1.9.0"}
 azureml = {version = "0.2.6"}
+azureml-fsspec = {version = "1.2.0"}
+azureml-mlflow = {version = "1.52.0"}
 
 [dev-packages]
 build = {version = ">=0.10.0", index = "pypi"}

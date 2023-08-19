@@ -1,14 +1,22 @@
+
+import os
+import dotenv
+import numpy
+import tqdm
+
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
 import torchvision
-import numpy
-import tqdm
 
 import mlflow
-import os
-import dotenv
+
+
+from config import workspace
+
 dotenv.load_dotenv(".env")
+
+
 
 def train(
     train_loader,
@@ -20,7 +28,7 @@ def train(
 ):
 
 
-    mlflow.set_tracking_uri(os.environ["MLFLOW_ENDPOINT"])
+    mlflow.set_tracking_uri(workspace.mlflow_tracking_uri)
     experiment = mlflow.get_experiment_by_name("Rice Classifier")
     if experiment is None:
         experiment_id = mlflow.create_experiment("Rice Classifier")
@@ -140,14 +148,14 @@ def train(
                 net,
                 f"rice_classifier_{epoch}",
                 signature=net.signature(),
-                code_paths=["train/rice_classifier.py"],
+                code_paths=["rice_classifier.py"],
             )
 
     mlflow.pytorch.log_model(
         net,
         "rice_classifier_final",
         signature=net.signature(),
-        code_paths=["train/rice_classifier.py"],
+        code_paths=["rice_classifier.py"],
     )
 
 
@@ -185,13 +193,21 @@ if __name__ == "__main__":
 
     labels = ["Arborio", "Basmati", "Ipsala", "Jasmine", "Karacadag"]
 
-    trainData, testData = dataset_loader.ImageClassificationDataset(
-        sys.argv[1], torchvision.transforms.ToTensor()
-    ).split()
+    trainData = dataset_loader.ImageClassificationDataset(
+        "rice_dataset", 6, dataset_loader.DatasetType.TRAIN, torchvision.transforms.ToTensor(), labels=labels
+    )
+
+    testData = dataset_loader.ImageClassificationDataset(
+        "rice_dataset", 6, dataset_loader.DatasetType.TEST, torchvision.transforms.ToTensor(), labels=labels
+    )
+    
     trainLoader = DataLoader(trainData, params["batch_size"], True)
     testLoader = DataLoader(testData, params["batch_size"], True)
     
     
     model = rice_classifier.RiceClassifierV1(labels)
 
-    train(trainLoader, testLoader, model, params, 20, labels)
+    
+    train(trainLoader, testLoader, model, params, labels)
+    
+

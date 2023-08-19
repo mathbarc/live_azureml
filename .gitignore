@@ -1,0 +1,3 @@
+**/__pycache__
+datasets/Rice_Image_Dataset
+training_job/.env

@@ -4,9 +4,10 @@ from typing import List
 
 import logging
 
+from torchvision.io.image import read_image
 from torchvision.transforms import Compose
 from torch.utils.data import Dataset
-import cv2
+import numpy
 
 
 class DatasetType(Enum):
@@ -54,7 +55,9 @@ class ImageClassificationDataset(Dataset):
     def __getitem__(self, index):
         img_path, label_str = self.image_list[index]
         
-        image = cv2.imread(img_path)
+        tmp = read_image(img_path).numpy()
+        image = numpy.transpose(tmp,(1,2,0))
+        
         label = self.labels.index(label_str)
         if self.transform:
             image = self.transform(image)
@@ -68,12 +71,10 @@ if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger().setLevel(logging.INFO)
 
-    dataset = ImageClassificationDataset("rice_dataset", 6)
+    dataset = ImageClassificationDataset("./datasets/Rice_Image_Dataset")
 
     img, label = dataset[-1]
 
     print(len(dataset))
     print(img.shape)
     print(label)
-    cv2.imshow("img", img)
-    cv2.waitKey()

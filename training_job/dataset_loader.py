@@ -1,18 +1,13 @@
 import os
-import random
 from enum import Enum
 from typing import List
 
 import logging
 
 from torchvision.transforms import Compose
-from torchvision.io import read_image
 from torch.utils.data import Dataset
 import cv2
 
-from config import ml_client
-
-from azureml.fsspec import AzureMachineLearningFileSystem
 
 class DatasetType(Enum):
     TRAIN = 0
@@ -22,43 +17,34 @@ class ImageClassificationDataset(Dataset):
 
     CACHE_PATH="/tmp"
 
-    def __init__(self, dataset_name:str, version:int, dataset_type:DatasetType = DatasetType.TRAIN, transform:Compose=None, target_transform:Compose=None, labels:List[str]=None):
-        logging.info("ImageClassificationDataset -> Connecting to dataset filesystem")
-        filedataset_asset = ml_client.data.get(name=dataset_name, version=str(version))
-        self.azure_fs = AzureMachineLearningFileSystem(filedataset_asset.path)
-
-        folders = self.azure_fs.ls()
-        self.azure_data_root = f"{os.sep}".join(folders[0].split(os.sep)[:-2])
+    def __init__(self, path, dataset_type:DatasetType = DatasetType.TRAIN, transform:Compose=None, target_transform:Compose=None, labels:List[str]=None):
+        
+        if dataset_type == DatasetType.TRAIN:
+            folder_path = os.path.join(path, "train")
+        elif dataset_type == DatasetType.TEST:
+            folder_path = os.path.join(path, "train")
+        else:
+            raise Exception("Invalid Dataset Type")
 
         self.transform = transform
         self.target_transform = target_transform
-        logging.info("ImageClassificationDataset -> Connecting to dataset filesystem ... done")
-        logging.info(f"ImageClassificationDataset -> loading dataset {dataset_name}:{version}:{dataset_type} metadata")
-        self._load_dataset_from_azureml(dataset_type)
+
+        self._load_dataset(folder_path)
         if labels is None:
             self.labels = list(set([label for _, label in self.image_list]))
         else:
             self.labels = labels
-        logging.info(f"ImageClassificationDataset -> loading dataset {dataset_name}:{version} metadata ... done")
 
-    def _load_dataset_from_azureml(self, dataset_type:DatasetType = DatasetType.TRAIN):
-        if dataset_type == DatasetType.TRAIN:
-            path = os.path.join(self.azure_data_root, "train")
-        elif dataset_type == DatasetType.TEST:
-            path = os.path.join(self.azure_data_root, "test")
-
+    def _load_dataset(self, path):
+        
         self.image_list = []
 
-        for folder in self.azure_fs.listdir(path):
-            if folder["type"] == "directory":
-                folder_path = folder["name"]
-                label = folder_path.split(os.sep)[-2]
+        for label in os.listdir(path):
+                folder_path = os.path.join(path, label)
                 logging.info(f"Loading samples of {label}")
-                for file in self.azure_fs.listdir(folder_path):
-                    if file["type"] == "file":
-                        file_name = file["name"]
-                        if file_name.endswith(".jpg"):
-                            self.image_list.append((file_name,label))
+                for file_name in os.listdir(folder_path):
+                    if file_name.endswith(".jpg"):
+                        self.image_list.append((os.path.join(folder_path,file_name),label))
 
         
 
@@ -67,11 +53,8 @@ class ImageClassificationDataset(Dataset):
     
     def __getitem__(self, index):
         img_path, label_str = self.image_list[index]
-        local_img_path = os.path.join(ImageClassificationDataset.CACHE_PATH, img_path)
-        if not os.path.exists(local_img_path):
-            self.azure_fs.get_file(img_path, ImageClassificationDataset.CACHE_PATH)
-
-        image = cv2.imread(local_img_path)
+        
+        image = cv2.imread(img_path)
         label = self.labels.index(label_str)
         if self.transform:
             image = self.transform(image)

@@ -1,12 +1,10 @@
 import os
 
-from dotenv import load_dotenv
-load_dotenv("training_job/.env")
+from config import ml_client
 
-from training_job.config import ml_client
 from azure.ai.ml.entities import AmlCompute
-
-from azure.ai.ml import command
+from azure.ai.ml import command, Input
+from azureml.fsspec import AzureMachineLearningFileSystem
 
 # Name assigned to the compute cluster
 cpu_compute_target = "cpu-rice-classifier"
@@ -46,27 +44,25 @@ except Exception:
     cpu_cluster = ml_client.compute.begin_create_or_update(cpu_cluster)
     
 
-
+filedataset_asset = ml_client.data.get(name="rice_dataset", version="6")
 
 job = command(
     inputs={
-        "dataset":"rice_dataset", 
-        "version":6,
+        "dataset":Input(type=filedataset_asset.type,path=filedataset_asset.path),
         "lr": 0.0001,
         "momentum": 0.8,
         "batch_size": 12,
         "epochs": 20
     },
     # inputs={
-    #     "dataset":"rice_dataset", 
-    #     "version":6,
+    #     "dataset":Input(type=filedataset_asset.type,path=filedataset_asset.path),
     #     "lr": 0.001,
     #     "momentum": 0.8,
     #     "batch_size": 20,
     #     "epochs": 20
     # },
     code="./training_job/",  # location of source code
-    command="python train_rice_classifier.py --dataset ${{inputs.dataset}} --version ${{inputs.version}} --lr ${{inputs.lr}} --momentum ${{inputs.momentum}} --batch_size ${{inputs.batch_size}} --epochs ${{inputs.epochs}}",
+    command="python train_rice_classifier.py --dataset ${{inputs.dataset}} --lr ${{inputs.lr}} --momentum ${{inputs.momentum}} --batch_size ${{inputs.batch_size}} --epochs ${{inputs.epochs}}",
     environment="rice-classifier-training-env@latest",
     compute=cpu_compute_target, #delete this line to use serverless compute
     display_name="rice_classifier_training",

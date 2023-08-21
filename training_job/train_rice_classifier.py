@@ -1,4 +1,4 @@
-
+import os
 import numpy
 
 import torch.nn as nn
@@ -138,7 +138,7 @@ def train(
                 net,
                 f"rice_classifier_{epoch}",
                 signature=net.signature(),
-                code_paths=["rice_classifier.py"],
+                code_paths=[os.path.join(os.path.dirname(__file__),"rice_classifier.py")],
             )
         
         print(f"Epoch {epoch} -> train_loss: {measures['train_loss']}, test_loss: {measures['test_loss']}")
@@ -147,7 +147,7 @@ def train(
         net,
         "rice_classifier_final",
         signature=net.signature(),
-        code_paths=["rice_classifier.py"]
+        code_paths=[os.path.join(os.path.dirname(__file__),"rice_classifier.py")],
     )
 
     mlflow.end_run()

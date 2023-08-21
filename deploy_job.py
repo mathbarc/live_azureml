@@ -66,12 +66,7 @@ job = command(
     environment="rice-classifier-training-env@latest",
     compute=cpu_compute_target, #delete this line to use serverless compute
     display_name="rice_classifier_training",
-    experiment_name="Rice Classifier",
-    environment_variables={
-                           "SUBSCRIPTION_ID":os.environ["SUBSCRIPTION_ID"], 
-                           "RESOURCE_GROUP_NAME":os.environ["RESOURCE_GROUP_NAME"],
-                           "WORKSPACE_NAME":os.environ["WORKSPACE_NAME"]
-                           }
+    experiment_name="Rice Classifier"
 )
 
 ml_client.create_or_update(job)

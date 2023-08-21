@@ -3,13 +3,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv("training_job/.env")
 
-from training_job.config import workspace, ml_client
+from training_job.config import ml_client
 from azure.ai.ml.entities import AmlCompute
 
 from azure.ai.ml import command
-from azure.ai.ml import Input
-
-
 
 # Name assigned to the compute cluster
 cpu_compute_target = "cpu-rice-classifier"
@@ -69,8 +66,8 @@ job = command(
     #     "epochs": 20
     # },
     code="./training_job/",  # location of source code
-    command="pip install -r requirements.txt; python train_rice_classifier.py --dataset ${{inputs.dataset}} --version ${{inputs.version}} --lr ${{inputs.lr}} --momentum ${{inputs.momentum}} --batch_size ${{inputs.batch_size}} --epochs ${{inputs.epochs}}",
-    environment="AzureML-PyTorch-1.3-CPU@latest",
+    command="python train_rice_classifier.py --dataset ${{inputs.dataset}} --version ${{inputs.version}} --lr ${{inputs.lr}} --momentum ${{inputs.momentum}} --batch_size ${{inputs.batch_size}} --epochs ${{inputs.epochs}}",
+    environment="rice-classifier-training-env@latest",
     compute=cpu_compute_target, #delete this line to use serverless compute
     display_name="rice_classifier_training",
     experiment_name="Rice Classifier",

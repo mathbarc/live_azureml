@@ -1,13 +1,12 @@
 import os
 import logging
 
-from azure.ai.ml import MLClient
-from azure.identity import DefaultAzureCredential
-
-
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__),".env"))
+
+from azure.ai.ml import MLClient
+from azure.identity import DefaultAzureCredential
 
 logging.info("starting azureml client")
 

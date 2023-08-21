@@ -3,7 +3,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
 torch = {version="2.0.1"}
 torchvision = {version="0.15.2"}
@@ -18,12 +17,6 @@ azureml-mlflow = {version = "1.52.0"}
 
 [dev-packages]
 build = {version = ">=0.10.0", index = "pypi"}
-pytest = {version = ">=7.2.0", index = "pypi"}
-pytest-cov = {version = ">=4.0.0", index = "pypi"}
-mypy = {version = ">=0.991", index = "pypi"}
-pylint = {version = ">=2.15.8", index = "pypi"}
-bandit = {version = ">=1.7.4", index = "pypi"}
-
 
 [requires]
 python_version = "3.8.5"

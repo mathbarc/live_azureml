@@ -10,9 +10,9 @@ from torchvision.io import read_image
 from torch.utils.data import Dataset
 import cv2
 
-from azureml.fsspec import AzureMachineLearningFileSystem
-
 from config import ml_client
+
+from azureml.fsspec import AzureMachineLearningFileSystem
 
 class DatasetType(Enum):
     TRAIN = 0

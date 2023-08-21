@@ -11,7 +11,6 @@ import mlflow
 
 from config import workspace
 
-import logging
 
 
 def train(
@@ -147,7 +146,7 @@ def train(
                 code_paths=["rice_classifier.py"],
             )
         
-        logging.info(f"Epoch {epoch} -> train_loss: {measures['train_loss']}, test_loss: {measures['test_loss']}")
+        print(f"Epoch {epoch} -> train_loss: {measures['train_loss']}, test_loss: {measures['test_loss']}")
 
     mlflow.pytorch.log_model(
         net,
@@ -168,9 +167,6 @@ if __name__ == "__main__":
     
     import os
     import argparse
-
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.INFO)
 
 
     # input and output arguments
@@ -221,20 +217,20 @@ if __name__ == "__main__":
     labels = ["Arborio", "Basmati", "Ipsala", "Jasmine", "Karacadag"]
 
 
-    logging.info("Loading Training Set")
+    print("Loading Training Set")
     trainData = dataset_loader.ImageClassificationDataset(
         args.dataset, args.version, dataset_loader.DatasetType.TRAIN, torchvision.transforms.ToTensor(), labels=labels
     )
 
-    logging.info("Loading Training Set ... DONE")
+    print("Loading Training Set ... DONE")
 
-    logging.info("Loading Testing Set")
+    print("Loading Testing Set")
 
     testData = dataset_loader.ImageClassificationDataset(
         args.dataset, args.version, dataset_loader.DatasetType.TEST, torchvision.transforms.ToTensor(), labels=labels
     )
 
-    logging.info("Loading Testing Set ... DONE")
+    print("Loading Testing Set ... DONE")
     
     trainLoader = DataLoader(trainData, params["batch_size"], True)
     testLoader = DataLoader(testData, params["batch_size"], True)

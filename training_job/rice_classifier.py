@@ -78,7 +78,7 @@ class RiceClassifierV1(nn.Module):
     def signature(self):
 
         input_schema = Schema(
-            [TensorSpec(numpy.dtype(numpy.float32), (-1, 250, 250, 3), "image")]
+            [TensorSpec(numpy.dtype(numpy.float32), (-1, 3, 250, 250), "image")]
         )
         output_schema = Schema(
             [TensorSpec(numpy.dtype(numpy.float32), (-1, self.nClasses), "probs")]

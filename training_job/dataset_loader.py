@@ -33,7 +33,7 @@ class ImageClassificationDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         logging.info("ImageClassificationDataset -> Connecting to dataset filesystem ... done")
-        logging.info(f"ImageClassificationDataset -> loading dataset {dataset_name}:{version} metadata")
+        logging.info(f"ImageClassificationDataset -> loading dataset {dataset_name}:{version}:{dataset_type} metadata")
         self._load_dataset_from_azureml(dataset_type)
         if labels is None:
             self.labels = list(set([label for _, label in self.image_list]))
@@ -49,9 +49,16 @@ class ImageClassificationDataset(Dataset):
 
         self.image_list = []
 
-        for file in self.azure_fs.glob(f"{path}/*/*.jpg"):
-            label = file.split(os.sep)[-2]
-            self.image_list.append((file,label))
+        for folder in self.azure_fs.listdir(path):
+            if folder["type"] == "directory":
+                folder_path = folder["name"]
+                label = folder_path.split(os.sep)[-2]
+                logging.info(f"Loading samples of {label}")
+                for file in self.azure_fs.listdir(folder_path):
+                    if file["type"] == "file":
+                        file_name = file["name"]
+                        if file_name.endswith(".jpg"):
+                            self.image_list.append((file_name,label))
 
         
 

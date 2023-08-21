@@ -1,8 +1,5 @@
 
-import os
-import dotenv
 import numpy
-import tqdm
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,8 +11,7 @@ import mlflow
 
 from config import workspace
 
-dotenv.load_dotenv(".env")
-
+import logging
 
 
 def train(
@@ -52,7 +48,7 @@ def train(
     device = torch.device(device_str)
     net = net.to(device)
 
-    for epoch in tqdm.tqdm(range(params['epochs'])):  # loop over the dataset multiple times
+    for epoch in range(params['epochs']):  # loop over the dataset multiple times
 
         measures = {}
 
@@ -150,35 +146,66 @@ def train(
                 signature=net.signature(),
                 code_paths=["rice_classifier.py"],
             )
+        
+        logging.info(f"Epoch {epoch} -> train_loss: {measures['train_loss']}, test_loss: {measures['test_loss']}")
 
     mlflow.pytorch.log_model(
         net,
         "rice_classifier_final",
         signature=net.signature(),
-        code_paths=["rice_classifier.py"],
+        code_paths=["rice_classifier.py"]
     )
+
+    mlflow.end_run()
 
 
 if __name__ == "__main__":
-    import sys
+    
     import dataset_loader
     import rice_classifier
 
     from torch.utils.data import DataLoader
     
     import os
+    import argparse
 
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
+
+
+    # input and output arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", type=str, help="dataset name")
+    parser.add_argument("--version", type=str, help="dataset version")
+    parser.add_argument("--lr", type=float, required=False, default=0.0001, help="model learning rate")
+    parser.add_argument("--momentum", type=float, required=False, default=0.8, help="momentum for parameter update")
+    parser.add_argument("--batch_size", type=int, required=False, default=12, help="size of data batches")
+    parser.add_argument("--epochs", type=int, required=False, default=20,  help="number of epochs")
+
+    args = parser.parse_args()
 
     params = {
 
-        "lr": 0.0001,
-        "momentum": 0.8,
-        "batch_size": 12,
+        "lr": args.lr,
+        "momentum": args.momentum,
+        "batch_size": args.batch_size,
         "criterion": "cross_entropy",
         "optmizer": "sgd",
         "model": "rice_classifier_v1",
-        "epochs": 20
+        "epochs": args.epochs
     }
+
+    # params = {
+
+        # "lr": 0.0001,
+        # "momentum": 0.8,
+        # "batch_size": 12,
+        # "epochs": 20,
+        # "criterion": "cross_entropy",
+        # "optmizer": "sgd",
+        # "model": "rice_classifier_v1",
+        
+    # }
 
     # params = {
 
@@ -193,13 +220,21 @@ if __name__ == "__main__":
 
     labels = ["Arborio", "Basmati", "Ipsala", "Jasmine", "Karacadag"]
 
+
+    logging.info("Loading Training Set")
     trainData = dataset_loader.ImageClassificationDataset(
-        "rice_dataset", 6, dataset_loader.DatasetType.TRAIN, torchvision.transforms.ToTensor(), labels=labels
+        args.dataset, args.version, dataset_loader.DatasetType.TRAIN, torchvision.transforms.ToTensor(), labels=labels
     )
 
+    logging.info("Loading Training Set ... DONE")
+
+    logging.info("Loading Testing Set")
+
     testData = dataset_loader.ImageClassificationDataset(
-        "rice_dataset", 6, dataset_loader.DatasetType.TEST, torchvision.transforms.ToTensor(), labels=labels
+        args.dataset, args.version, dataset_loader.DatasetType.TEST, torchvision.transforms.ToTensor(), labels=labels
     )
+
+    logging.info("Loading Testing Set ... DONE")
     
     trainLoader = DataLoader(trainData, params["batch_size"], True)
     testLoader = DataLoader(testData, params["batch_size"], True)

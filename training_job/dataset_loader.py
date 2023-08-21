@@ -7,7 +7,6 @@ import logging
 from torchvision.io.image import read_image
 from torchvision.transforms import Compose
 from torch.utils.data import Dataset
-import numpy
 
 
 class DatasetType(Enum):
@@ -55,8 +54,7 @@ class ImageClassificationDataset(Dataset):
     def __getitem__(self, index):
         img_path, label_str = self.image_list[index]
         
-        tmp = read_image(img_path).numpy()
-        image = numpy.transpose(tmp,(1,2,0))
+        image = read_image(img_path).float() *(1./255.)
         
         label = self.labels.index(label_str)
         if self.transform:

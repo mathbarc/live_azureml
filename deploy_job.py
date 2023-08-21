@@ -65,7 +65,6 @@ job = command(
     command="python train_rice_classifier.py --dataset ${{inputs.dataset}} --lr ${{inputs.lr}} --momentum ${{inputs.momentum}} --batch_size ${{inputs.batch_size}} --epochs ${{inputs.epochs}}",
     environment="rice-classifier-training-env@latest",
     compute=cpu_compute_target, #delete this line to use serverless compute
-    display_name=f"rice_classifier_training_{uuid4()}",
     experiment_name="Rice Classifier"
 )
 

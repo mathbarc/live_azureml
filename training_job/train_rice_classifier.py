@@ -2,9 +2,7 @@ import os
 import numpy
 
 import torch.nn as nn
-import torch.nn.functional as F
 import torch
-import torchvision
 
 import mlflow
 
@@ -188,8 +186,9 @@ if __name__ == "__main__":
 
 
     print("Loading Training Set")
+
     trainData = dataset_loader.ImageClassificationDataset(
-        args.dataset, dataset_loader.DatasetType.TRAIN, torchvision.transforms.ToTensor(), labels=labels
+        args.dataset, dataset_loader.DatasetType.TRAIN, labels=labels
     )
 
     print("Loading Training Set ... DONE")
@@ -197,7 +196,7 @@ if __name__ == "__main__":
     print("Loading Testing Set")
 
     testData = dataset_loader.ImageClassificationDataset(
-        args.dataset, dataset_loader.DatasetType.TEST, torchvision.transforms.ToTensor(), labels=labels
+        args.dataset, dataset_loader.DatasetType.TEST, labels=labels
     )
 
     print("Loading Testing Set ... DONE")

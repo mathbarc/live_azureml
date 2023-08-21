@@ -1,10 +1,4 @@
 torch == 2.0.1
 torchvision == 0.15.2
-python-dotenv == 1.0.0
-tqdm == 4.65.0
 opencv-python == 4.7.0.68
-azure-cli == 2.51.0
-azure-ai-ml == 1.9.0
-azureml == 0.2.6
-azureml-fsspec == 1.2.0
 azureml-mlflow == 1.52.0
